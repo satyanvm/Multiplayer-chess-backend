@@ -16,10 +16,6 @@ const client_1 = require("@prisma/client");
 exports.prisma = new client_1.PrismaClient();
 class Game {
     constructor(player1, player2) {
-        // what my guess is this constructor is only called 
-        // when this constructor is called?
-        // i can understand that this constructor is only called when the game is initialised but how
-        // is that done?    
         this.moveCount = 0;
         this.player1 = player1;
         this.player2 = player2;
@@ -43,6 +39,7 @@ class Game {
             // first validate the chess move
             if (this.moveCount % 2 === 0 && socket !== this.player1) {
                 console.log("its returning here1");
+                console.log("this.moveCount is ", this.moveCount);
                 return;
             }
             if (this.moveCount % 2 === 1 && socket !== this.player2) {
@@ -69,7 +66,7 @@ class Game {
                     return;
                 }
                 const gameId = game.id;
-                exports.prisma.moves.create({
+                yield exports.prisma.moves.create({
                     data: {
                         to: move.to,
                         from: move.from,

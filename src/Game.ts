@@ -13,11 +13,6 @@ export class Game {
     private moveCount = 0;
     
     constructor(player1: any, player2: any) {
-        
-        // what my guess is this constructor is only called 
-        // when this constructor is called?
-        // i can understand that this constructor is only called when the game is initialised but how
-        // is that done?    
 
         this.player1 = player1;   
         this.player2 = player2;  
@@ -47,7 +42,8 @@ export class Game {
     }) {        
         // first validate the chess move
         if(this.moveCount % 2 === 0 && socket !== this.player1) {
-            console.log("its returning here1");
+            console.log("its returning here1"); 
+            console.log("this.moveCount is ", this.moveCount);
             return; 
         } 
 
@@ -80,12 +76,12 @@ export class Game {
             }
             const gameId = game.id;
 
-            prisma.moves.create({
+           await prisma.moves.create({
                 data: {
                     to: move.to,
-                    from: move.from,
+                    from: move.from, 
                     gameId: gameId,
-                    createdAtSec: Date.now().toString()
+                    createdAtSec: Date.now().toString() 
                 }
                 });
 

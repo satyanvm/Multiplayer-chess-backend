@@ -103,7 +103,7 @@ class GameManager {
                 const game = this.games.find(game => game.player1.userId === userId || game.player2.userId === userId);
                 if (game) {
                     console.log("DEBUG: Payload received:", JSON.stringify(message.payload));
-                    game.makeMove(socket, message.payload, game.player1.userId, game.player2.userId);
+                    game.makeMove(game.player1.userId, game.player2.userId, socket, message.payload);
                 }
                 else {
                     console.log("Game not found for user:", userId);

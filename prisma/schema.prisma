@@ -23,7 +23,7 @@ model games{
 model moves{
   to        String  
   from      String
-  createdAtSec  DateTime @db.Timestamp(0)
+  createdAtSec  String
   gameId        Int      
   @@unique([createdAtSec]) // “time code” = game + second-level         
   game      games           @relation(fields: [gameId], references: [id]) 

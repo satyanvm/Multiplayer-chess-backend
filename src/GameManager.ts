@@ -11,7 +11,7 @@ export class GameManager {
     private pendingUser: WebSocket | null; 
     private users: Map<string, WebSocket>;
 
-    constructor() {
+    constructor() { 
         this.games = [];
         this.pendingUserId = null;
         this.users = new Map();
@@ -114,7 +114,7 @@ export class GameManager {
                 if (game) {
 
                       console.log("DEBUG: Payload received:", JSON.stringify(message.payload));
-                    game.makeMove(socket, message.payload, game.player1.userId, game.player2.userId); 
+                    game.makeMove(  game.player1.userId, game.player2.userId, socket, message.payload ); 
                 } else {
                     console.log("Game not found for user:", userId);
                 }
