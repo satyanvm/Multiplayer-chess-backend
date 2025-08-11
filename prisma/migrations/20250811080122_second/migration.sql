@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."games" ALTER COLUMN "player1Id" SET DATA TYPE TEXT,
+ALTER COLUMN "player2Id" SET DATA TYPE TEXT;
