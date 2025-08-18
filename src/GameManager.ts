@@ -112,7 +112,6 @@ export class GameManager {
                 );
                   
                 if (game) {
-
                       console.log("DEBUG: Payload received:", JSON.stringify(message.payload));
                     game.makeMove(  game.player1.userId, game.player2.userId, socket, message.payload ); 
                 } else {
@@ -132,5 +131,5 @@ export class GameManager {
             this.pendingUser = null;
         }
     }); 
-    }
+    }   
 }
