@@ -14,11 +14,14 @@ const chess_js_1 = require("chess.js");
 const messages_1 = require("./messages");
 const client_1 = require("@prisma/client");
 exports.prisma = new client_1.PrismaClient();
+const crypto_1 = require("crypto");
 class Game {
-    constructor(player1, player2) {
+    constructor(player1, player2, gameId) {
+        var _a;
         this.moveCount = 0;
         this.player1 = player1;
         this.player2 = player2;
+        this.gameId = (_a = this.gameId) !== null && _a !== void 0 ? _a : crypto_1.randomUUID;
         this.board = new chess_js_1.Chess();
         this.startTime = new Date();
         this.player1.send(JSON.stringify({

@@ -9,11 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameManager = exports.prisma = void 0;
+exports.GameManager = exports.GAME_JOINED = exports.prisma = void 0;
 const Game_1 = require("./Game");
 const messages_1 = require("./messages");
 const client_1 = require("@prisma/client");
 exports.prisma = new client_1.PrismaClient();
+exports.GAME_JOINED = "game_joined";
 class GameManager {
     constructor() {
         this.games = [];
@@ -50,14 +51,9 @@ class GameManager {
             if (message.type === messages_1.INIT_GAME) {
                 console.log("inside of message.type check");
                 if (this.pendingUser) {
-                    // start a game if there is already a pendingUser waiting
                     const game = new Game_1.Game(this.pendingUser, socket);
                     if (game) {
                         this.games.push(game);
-                        // const player1Entry = Array.from(this.users.entries()).find(([id, ws]) => {
-                        //     ws === this.pendingUser
-                        //     playerIds.push(id)
-                        // });
                         let playerIds = [];
                         for (const [id, ws] of this.users.entries()) {
                             if (ws === this.pendingUser) {
@@ -65,11 +61,6 @@ class GameManager {
                                 playerIds.push(id);
                             }
                         }
-                        // const player1Id = player1Entry ? player1Entry[1] : null;
-                        // const player2Entry = Array.from(this.users.entries()).find(([id, ws]) => {
-                        //     ws === this.pendingUser
-                        //     playerIds.push(id)
-                        // });
                         for (const [id, ws] of this.users.entries()) {
                             if (ws === socket) {
                                 playerIds.push(id);
@@ -80,14 +71,22 @@ class GameManager {
                         // import prisma and then do this here
                         const thegame = yield exports.prisma.games.create({
                             data: {
-                                id: ((Date.now() & 0x3fffffff) ^ (Math.random() * 0x3fffffff | 0)) | 0, // or use a proper unique id generator
+                                id: ((Date.now() & 0x3fffffff) ^
+                                    ((Math.random() * 0x3fffffff) | 0)) |
+                                    0, // or use a proper unique id generator
                                 player1Id: playerIds[0],
-                                player2Id: playerIds[1]
-                            }
+                                player2Id: playerIds[1],
+                            },
                         });
                         const gameId = thegame.id;
                         this.pendingUser = null;
                         console.log("Game created. Current games:", this.games.length);
+                        socket.send(JSON.stringify({
+                            type: exports.GAME_JOINED,
+                            payload: {
+                                gameId: gameId
+                            },
+                        }));
                     }
                     else {
                         // if no pendingUser found, add this user
@@ -100,7 +99,7 @@ class GameManager {
             }
             else if (message.type === messages_1.MOVE) {
                 console.log("Current games array:", this.games);
-                const game = this.games.find(game => game.player1.userId === userId || game.player2.userId === userId);
+                const game = this.games.find((game) => game.player1.userId === userId || game.player2.userId === userId);
                 if (game) {
                     console.log("DEBUG: Payload received:", JSON.stringify(message.payload));
                     game.makeMove(game.player1.userId, game.player2.userId, socket, message.payload);
@@ -113,7 +112,7 @@ class GameManager {
         socket.on("close", () => {
             this.removeUser(socket);
             // Remove games where this socket was a player
-            this.games = this.games.filter(game => game.player1 !== socket && game.player2 !== socket);
+            this.games = this.games.filter((game) => game.player1 !== socket && game.player2 !== socket);
             // Clear pending user if it's this socket
             if (this.pendingUser === socket) {
                 this.pendingUser = null;
