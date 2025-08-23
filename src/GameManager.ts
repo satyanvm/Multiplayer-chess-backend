@@ -16,13 +16,16 @@ export class GameManager {
     this.pendingUserId = null;
     this.users = new Map();
     this.pendingUser = null;
+
   }
 
   addUser(socket: WebSocket) {
     const userId = Math.random().toString(36).substr(2, 9);
     (socket as any).userId = userId;
     this.users.set(userId, socket);
-    this.addHandler(socket);
+    const firstEntry = this.users.values().next();
+    this.addHandler(socket, firstEntry?.value || socket);
+
   }
 
   removeUser(socket: WebSocket) {
@@ -42,8 +45,8 @@ export class GameManager {
     }
   }
 
-  private addHandler(socket: WebSocket) {
-    const userId = (socket as any).userId;
+  private addHandler(socket: WebSocket, socket1: WebSocket) {
+    const userId = (socket as any).userId; 
     let playerIds: any = [];
     socket.on("message", async (data) => {
       const message = JSON.parse(data.toString());
@@ -96,6 +99,15 @@ export class GameManager {
                                     },
                                   })
                                 );
+                                    socket1.send( 
+                                  JSON.stringify({
+                                    type: GAME_JOINED,
+                                    payload: {
+                                      gameId: gameId
+                                    },
+                                  })
+                                );
+
           } else {
             this.pendingUser = socket;
           }
