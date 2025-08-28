@@ -28,3 +28,10 @@ model moves{
   @@unique([createdAtSec]) // “time code” = game + second-level         
   game      games           @relation(fields: [gameId], references: [id]) 
 } 
+
+model users {
+  id            String   @id @default(uuid())
+  username      String?   @unique
+  name          String?
+  email         String   @unique
+  }

@@ -8,7 +8,7 @@ export class Game {
   public player1: any;
   public player2: any;
   public gameId: any;
-  private board: Chess;
+  public board: Chess;
   private startTime: Date;
   private moveCount = 0;
 
@@ -38,6 +38,17 @@ export class Game {
     );
   }
 
+  async updateSecondPlayer(socket: WebSocket){
+    this.player2 = socket;
+
+    const users = await prisma.users.findMany({
+      where:{
+        id: {
+          in: [this.player1]
+        }
+      }
+    })
+  }
   async makeMove(
     player1Id: any,
     player2Id: any,

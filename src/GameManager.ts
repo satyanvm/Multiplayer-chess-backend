@@ -3,8 +3,13 @@ import { Game } from "./Game";
 import { INIT_GAME, MOVE } from "./messages";
 
 import { PrismaClient } from "@prisma/client";
+import { User } from "./SocketManager";
+import { randomUUID } from "crypto";
+import { extractAuthUser } from "./auth";
 export const prisma = new PrismaClient();
 export const GAME_JOINED = "game_joined";
+export const JOIN_ROOM = "join_room";
+
 export class GameManager {
   private games: Game[];
   private pendingUserId: string | null;
@@ -24,7 +29,8 @@ export class GameManager {
     (socket as any).userId = userId;
     this.users.set(userId, socket);
     const firstEntry = this.users.values().next();
-    this.addHandler(socket, firstEntry?.value || socket);
+    const user = extractAuthUser(socket)
+    this.addHandler();
 
   }
 
@@ -45,19 +51,57 @@ export class GameManager {
     }
   }
 
-  private addHandler(socket: WebSocket, socket1: WebSocket) {
-    const userId = (socket as any).userId; 
+  private addHandler(user: User) { 
+    const userId = (user.socket as any).userId; 
     let playerIds: any = [];
-    socket.on("message", async (data) => {
-      const message = JSON.parse(data.toString());
-      console.log("message is " + message);
+    user.socket.addEventListener('message', async (event) => {
+      const message = JSON.parse(event.data.toString());
+      console.log("message is " + message); 
     
-      if (message.type === INIT_GAME) {
+      if(message.type === JOIN_ROOM){
+
+       const gameId = message.payload.gameId;
+        if(!gameId){ 
+        return;
+       } 
+
+       let availableGame = this.games.find((game) => game.gameId === gameId)
+                                       
+       const gameFromDb = await prisma.games.findUnique({
+      where: {id: gameId}, include: {
+        moves: {
+          orderBy: {
+            //@ts-ignore
+            moveNumber: "asc"
+          }
+        }
+       }
+      }
+    )
+    if(availableGame && !availableGame.player2){
+      // availableGame.updateS
+    }
+    if(!gameFromDb){
+      console.log("no game from db found");
+      return;
+    } 
+      }
+
+      if (message.type === INIT_GAME) {   
         console.log("inside of message.type check");
+
+        await prisma.users.create({
+          data: {
+            id: randomUUID(),
+            username: message.username,
+            name: message.name,
+            email: message.email
+                    } 
+        })   
 
         if (this.pendingUser) {
 
-            const game = new Game(this.pendingUser, socket);
+            const game = new Game(this.pendingUser, user.socket);
           if (game) { 
             this.games.push(game);
 
@@ -70,7 +114,7 @@ export class GameManager {
             }
 
             for (const [id, ws] of this.users.entries()) {
-              if (ws === socket) {
+              if (ws === (user.socket as unknown as WebSocket)) {
                 playerIds.push(id);
               }
             }
@@ -90,30 +134,33 @@ export class GameManager {
 
             this.pendingUser = null;
             console.log("Game created. Current games:", this.games.length);
-                                socket.send( 
-                                  JSON.stringify({
-                                    type: GAME_JOINED,
-                                    payload: {
-                                      gameId: gameId
-                                      
-                                    },
-                                  })
-                                );
-                                    socket1.send( 
-                                  JSON.stringify({
-                                    type: GAME_JOINED,
-                                    payload: {
-                                      gameId: gameId
-                                    },
-                                  })
-                                );
+              user.socket.send( 
+                JSON.stringify({
+                  type: GAME_JOINED,
+                  payload: {
+                    gameId: gameId
+                    
+                  },
+                })
+              );
+              //     user.socket1.send( 
+              //   JSON.stringify({
+              //     type: GAME_JOINED,
+              // //     payload: {
+              // //       gameId: gameId
+              // //     },
+              // //   })
+              // // );
 
           } else {
-            this.pendingUser = socket;
+            //@ts-ignore
+            this.pendingUser = user.socket;
           }
         } else {
-          this.pendingUser = socket;
+          //@ts-ignore
+          this.pendingUser = user.socket;
         }
+
       } else if (message.type === MOVE) {
         console.log("Current games array:", this.games);
         const game = this.games.find(
@@ -129,7 +176,7 @@ export class GameManager {
           game.makeMove(
             game.player1.userId,
             game.player2.userId,
-            socket,
+            user.socket as unknown as WebSocket,
             message.payload
           );
         } else {
@@ -138,12 +185,12 @@ export class GameManager {
       }
     });
 
-    socket.on("close", () => {
-      this.removeUser(socket);
+    user.socket.addEventListener("close", () => {
+      this.removeUser(user.socket as unknown as WebSocket);
       this.games = this.games.filter(
-        (game) => game.player1 !== socket && game.player2 !== socket
+        (game) => game.player1 !== user.socket && game.player2 !== user.socket
       );
-      if (this.pendingUser === socket) {
+      if (this.pendingUser === user.socket as unknown as WebSocket) {
         this.pendingUser = null;
       }
     });

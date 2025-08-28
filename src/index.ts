@@ -1,5 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { GameManager } from "./GameManager";
+import url from 'url';
 
 const wss = new WebSocketServer({ port: 8080 });
 // web-socket: connection making
@@ -40,7 +41,12 @@ wss.on('close', function close() {
 
 wss.on('connection', function connection(ws: WebSocket) {
   console.log("✅ Client connected.");
-  gameManager.addUser(ws);
+
+
+  //  const token: string = url.parse(req.url, true).query.token;
+
+
+   gameManager.addUser(ws);
 
   // --- Add heartbeat properties to the new connection ---
   const wsWithIsAlive = ws as WebSocket & { isAlive: boolean };
