@@ -12,5 +12,5 @@ export interface userJwtClaims {
 export const extractAuthUser = (token: string, ws: WebSocket): User => {
   const decoded = jwt.verify(token, JWT_SECRET) as userJwtClaims;
   //@ts-ignore
-  return new User(ws, decoded.userId, decoded.name);
+  return new User(ws, decoded.userId, decoded.name); 
 };   

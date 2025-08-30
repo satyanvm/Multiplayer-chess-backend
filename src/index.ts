@@ -1,24 +1,33 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { GameManager } from "./GameManager";
-import url from 'url';
+import cors from "cors";
+import express from "express";
+import http from 'http';
+import authroute from './auth/auth' 
+const PORT= 8080;
+const app = express();
+app.use(express.json());
+app.use(cors()); 
 
-const wss = new WebSocketServer({ port: 8080 });
-// web-socket: connection making
+app.get('/', (req, res) => {
+    res.send('HTTP server is running!');
+});
 
+app.use('/auth', authroute);
+
+const server = http.createServer(app); 
+const wss = new WebSocketServer({ server });
 const gameManager = new GameManager();
-
-// --- START: HEARTBEAT LOGIC ---
-
-// Function to handle cleanup when a connection is terminated
 function onDisconnect(ws: WebSocket) {
-  console.log('🧹 Cleaning up disconnected user.');
-  gameManager.removeUser(ws); // Notify GameManager to remove the user
+
+  console.log('Cleaning up disconnected user.');
+
+  gameManager.removeUser(ws);
+
 }
 
-// Set up the interval to ping clients
 const interval = setInterval(function ping() {
   wss.clients.forEach(function each(ws: WebSocket) {
-    // Augment the WebSocket type to include our custom property
     const wsWithIsAlive = ws as WebSocket & { isAlive: boolean };
 
     if (wsWithIsAlive.isAlive === false) {
@@ -29,39 +38,36 @@ const interval = setInterval(function ping() {
     wsWithIsAlive.isAlive = false;
     ws.ping();
   });
-}, 30000); // 30 seconds
+}, 30000);
 
-// Clean up the interval when the server closes
 wss.on('close', function close() {
   clearInterval(interval);
 });
 
-// --- END: HEARTBEAT LOGIC ---
-
-
 wss.on('connection', function connection(ws: WebSocket) {
-  console.log("✅ Client connected.");
+  console.log("Client connected.");
 
-
-  //  const token: string = url.parse(req.url, true).query.token;
-
-
+  //  const token: any = url.parse(req.url, true).query.token;
+  // const user = extractAuthUser(token, ws);
    gameManager.addUser(ws);
 
-  // --- Add heartbeat properties to the new connection ---
   const wsWithIsAlive = ws as WebSocket & { isAlive: boolean };
   wsWithIsAlive.isAlive = true;
 
   wsWithIsAlive.on('pong', () => {
     wsWithIsAlive.isAlive = true;
   });
-  // ---
 
-  // When the connection closes cleanly, also clean up  
   ws.on('close', () => {
-    console.log("❌ Client disconnected cleanly.");
+    console.log("Client disconnected cleanly.");
     onDisconnect(ws);
   });
 });
 
-console.log("🚀 WebSocket Server started on ws://localhost:8080");
+
+
+server.listen(PORT, () => {
+    console.log(`🚀 Server (HTTP & WebSocket) is running on http://localhost:${PORT}`);
+});
+
+console.log("WebSocket Server started on ws://localhost:8080");

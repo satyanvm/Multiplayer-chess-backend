@@ -33,5 +33,5 @@ model users {
   id            String   @id @default(uuid())
   username      String?   @unique
   name          String?
-  email         String   @unique
+  // email         String   @unique
   }

@@ -6,6 +6,7 @@ import { PrismaClient } from "@prisma/client";
 import { User } from "./SocketManager";
 import { randomUUID } from "crypto";
 import { extractAuthUser } from "./auth";
+import { Socket } from "dgram";
 export const prisma = new PrismaClient();
 export const GAME_JOINED = "game_joined";
 export const JOIN_ROOM = "join_room";
@@ -27,11 +28,11 @@ export class GameManager {
   addUser(socket: WebSocket) {
     const userId = Math.random().toString(36).substr(2, 9);
     (socket as any).userId = userId;
+    //@ts-ignore
     this.users.set(userId, socket);
     const firstEntry = this.users.values().next();
-    const user = extractAuthUser(socket)
-    this.addHandler();
-
+    this.addHandler(socket); 
+ 
   }
 
   removeUser(socket: WebSocket) {
@@ -51,10 +52,10 @@ export class GameManager {
     }
   }
 
-  private addHandler(user: User) { 
-    const userId = (user.socket as any).userId; 
+  private addHandler(socket: WebSocket) { 
+    const userId = (socket as any).userId; 
     let playerIds: any = [];
-    user.socket.addEventListener('message', async (event) => {
+    socket.addEventListener('message', async (event) => {
       const message = JSON.parse(event.data.toString());
       console.log("message is " + message); 
     
@@ -68,7 +69,7 @@ export class GameManager {
        let availableGame = this.games.find((game) => game.gameId === gameId)
                                        
        const gameFromDb = await prisma.games.findUnique({
-      where: {id: gameId}, include: {
+      where: {id: gameId}, include: { 
         moves: {
           orderBy: {
             //@ts-ignore
@@ -94,16 +95,16 @@ export class GameManager {
           data: {
             id: randomUUID(),
             username: message.username,
-            name: message.name,
-            email: message.email
+            name: message.name
+            // email: message.email
                     } 
         })   
 
         if (this.pendingUser) {
 
-            const game = new Game(this.pendingUser, user.socket);
-          if (game) { 
-            this.games.push(game);
+            const game = new Game(this.pendingUser, socket); 
+          if (game) {  
+            this.games.push(game);  
 
             let playerIds: string[] = [];
             for (const [id, ws] of this.users.entries()) {
@@ -113,8 +114,8 @@ export class GameManager {
               }
             }
 
-            for (const [id, ws] of this.users.entries()) {
-              if (ws === (user.socket as unknown as WebSocket)) {
+            for (const [id, ws] of this.users.entries()) { 
+              if (ws === (socket as unknown as WebSocket)) {
                 playerIds.push(id);
               }
             }
@@ -134,7 +135,7 @@ export class GameManager {
 
             this.pendingUser = null;
             console.log("Game created. Current games:", this.games.length);
-              user.socket.send( 
+              socket.send( 
                 JSON.stringify({
                   type: GAME_JOINED,
                   payload: {
@@ -143,7 +144,7 @@ export class GameManager {
                   },
                 })
               );
-              //     user.socket1.send( 
+              //     socket1.send( 
               //   JSON.stringify({
               //     type: GAME_JOINED,
               // //     payload: {
@@ -152,18 +153,18 @@ export class GameManager {
               // //   })
               // // );
 
-          } else {
+          } else { 
             //@ts-ignore
-            this.pendingUser = user.socket;
+            this.pendingUser = socket;
           }
         } else {
           //@ts-ignore
-          this.pendingUser = user.socket;
+          this.pendingUser = socket;
         }
 
       } else if (message.type === MOVE) {
         console.log("Current games array:", this.games);
-        const game = this.games.find(
+        const game = this.games.find( 
           (game) =>
             game.player1.userId === userId || game.player2.userId === userId
         );
@@ -176,7 +177,7 @@ export class GameManager {
           game.makeMove(
             game.player1.userId,
             game.player2.userId,
-            user.socket as unknown as WebSocket,
+            socket as unknown as WebSocket,
             message.payload
           );
         } else {
@@ -185,12 +186,12 @@ export class GameManager {
       }
     });
 
-    user.socket.addEventListener("close", () => {
-      this.removeUser(user.socket as unknown as WebSocket);
+    socket.addEventListener("close", () => {
+      this.removeUser(socket as unknown as WebSocket);
       this.games = this.games.filter(
-        (game) => game.player1 !== user.socket && game.player2 !== user.socket
+        (game) => game.player1 !== socket && game.player2 !== socket
       );
-      if (this.pendingUser === user.socket as unknown as WebSocket) {
+      if (this.pendingUser === socket as unknown as WebSocket) {
         this.pendingUser = null;
       }
     });

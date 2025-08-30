@@ -8,13 +8,14 @@ const router = Router()
 // we will for now only allow guest endpoint- will add oauth later
 // this route is to be hit when the user wants to login as a guest
 router.post('/guest', async (req: Request, res: Response) => {
+  console.log("this guest thingy is triggered");
   const bodyData = req.body;
   let guestUUID = 'guest-' + uuidv4();  
 
   const user = await db.users.create({
     data: {
       username: guestUUID,
-      email: guestUUID + '@chess100x.com',
+      // email: guestUUID + '@chess100x.com',
       name: bodyData.name || guestUUID
         },
   });   
@@ -25,11 +26,12 @@ router.post('/guest', async (req: Request, res: Response) => {
   ); 
   const UserDetails: any = {
     id: user.id,
-    name: user.name!,
+    name: user.name ,
     token: token
   };
   res.cookie('guest', token);
   res.json(UserDetails);
-}); 
+});  
+ 
 
 export default router;
