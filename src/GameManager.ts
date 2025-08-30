@@ -133,7 +133,6 @@ export class GameManager {
             });
             const gameId = thegame.id;
 
-            this.pendingUser = null;
             console.log("Game created. Current games:", this.games.length);
               socket.send( 
                 JSON.stringify({
@@ -144,6 +143,16 @@ export class GameManager {
                   },
                 })
               );
+                this.pendingUser.send( 
+                JSON.stringify({
+                  type: GAME_JOINED,
+                  payload: {
+                    gameId: gameId
+                    
+                  },
+                })
+              );
+              this.pendingUser = null;
               //     socket1.send( 
               //   JSON.stringify({
               //     type: GAME_JOINED,
