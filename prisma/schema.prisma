@@ -27,6 +27,7 @@ model moves{
   gameId        Int      
   @@unique([createdAtSec]) // “time code” = game + second-level         
   game      games           @relation(fields: [gameId], references: [id]) 
+  moveNumber       Int  
 } 
 
 model users {

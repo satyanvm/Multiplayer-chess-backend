@@ -5,16 +5,18 @@ import { PrismaClient } from "@prisma/client";
 export const prisma = new PrismaClient();
 import { randomUUID } from "crypto";
 export class Game {
-  public player1: any;
-  public player2: any;
+  public player1?: any;
+  public player2?: any;
+  public player3?: any;
   public gameId: any;
   public board: Chess;
   private startTime: Date;
   private moveCount = 0;
 
-  constructor(player1: any, player2: any, gameId?: string) {
+  constructor(player1: any, player2: any, player3: any, gameId?: string) {
     this.player1 = player1;
     this.player2 = player2;
+    this.player3 = player3;
     this.gameId = this.gameId ?? randomUUID;
     this.board = new Chess();
     this.startTime = new Date();
@@ -25,7 +27,7 @@ export class Game {
         payload: {
           color: "white",
         },
-      })
+      }) 
     );
 
     this.player2.send(
@@ -57,16 +59,26 @@ export class Game {
       from: string;
       to: string;
     }
-  ) {
-    if (this.moveCount % 2 === 0 && socket !== this.player1) {
+  ) { 
+    if (this.moveCount % 2 === 0 && socket !== this.player1 ) {
+      if(socket === this.player3){
+        console.log("proceed")
+    } else{
       console.log("its returning here1");
       console.log("this.moveCount is ", this.moveCount);
       return;
     }
 
+    }
+
     if (this.moveCount % 2 === 1 && socket !== this.player2) {
-      console.log("its returning here2");
+      if(socket === this.player3){
+        console.log("proceed")
+    } else{
+      console.log("its returning here2"); 
+      console.log("this.moveCount is ", this.moveCount);
       return;
+    }
     }
 
     console.log("did not early return");
@@ -75,12 +87,12 @@ export class Game {
 
     try {
       this.board.move({ from: move.from, to: move.to });
-
+      
       const game = await prisma.games.findFirst({
         where: {
           OR: [{ player1Id: player1Id }, { player2Id: player2Id }],
         },
-      });
+      }); 
       if (!game) {
         console.error("can't find game in game.ts");
         return;
@@ -89,10 +101,11 @@ export class Game {
 
       await prisma.moves.create({
         data: {
-          to: move.to,
+          to: move.to,  
           from: move.from,
           gameId: gameId,
           createdAtSec: Date.now().toString(),
+          moveNumber: this.moveCount 
         },
       });
 

@@ -32,8 +32,7 @@ export class GameManager {
     this.users.set(userId, socket);
     const firstEntry = this.users.values().next();
     this.addHandler(socket); 
- 
-  }
+  } 
 
   removeUser(socket: WebSocket) {
     let userKeyToDelete: string | null = null;
@@ -59,18 +58,19 @@ export class GameManager {
       const message = JSON.parse(event.data.toString());
       console.log("message is " + message); 
     
-      if(message.type === JOIN_ROOM){
+      if(message.type === JOIN_ROOM){      
 
-       const gameId = message.payload.gameId;
+       const gameId = parseInt(message.payload.gameId);
+       console.log("the gameid ", gameId)
         if(!gameId){ 
         return;
        } 
 
        let availableGame = this.games.find((game) => game.gameId === gameId)
-                                       
+      console.log("this.games is ", this.games);                                       
        const gameFromDb = await prisma.games.findUnique({
       where: {id: gameId}, include: { 
-        moves: {
+        moves: {      
           orderBy: {
             //@ts-ignore
             moveNumber: "asc"
@@ -80,12 +80,45 @@ export class GameManager {
       }
     )
     if(availableGame && !availableGame.player2){
+      console.log( "entering 1");
       // availableGame.updateS
+      return;
     }
     if(!gameFromDb){
       console.log("no game from db found");
       return;
-    } 
+    }  
+    
+    console.log("before socket.send") 
+    const game = this.games.find((game) => game.gameId = gameId) 
+
+
+    if(game){
+      console.log("passed if game");
+
+     for (const [userId, userSocket] of this.users.entries()) {
+      if (userSocket === socket) {
+        playerIds.push(userId)
+        game.player3 = userId;
+      }}
+
+    socket.send(
+          JSON.stringify({
+            type: GAME_JOINED,
+            payload: {
+              gameId,
+              moves: gameFromDb.moves, 
+              blackPlayer: {
+                id: gameFromDb.player1Id
+                            },
+              whitePlayer: {
+                id: gameFromDb.player2Id
+                            }, 
+            },
+          }),
+        ); 
+        }
+        
       }
 
       if (message.type === INIT_GAME) {   
@@ -102,7 +135,7 @@ export class GameManager {
 
         if (this.pendingUser) {
 
-            const game = new Game(this.pendingUser, socket); 
+            const game = new Game(this.pendingUser, socket, null); 
           if (game) {  
             this.games.push(game);  
 
@@ -166,16 +199,16 @@ export class GameManager {
             //@ts-ignore
             this.pendingUser = socket;
           }
-        } else {
+        } else { 
           //@ts-ignore
           this.pendingUser = socket;
         }
 
-      } else if (message.type === MOVE) {
+      } else if (message.type === MOVE) { 
         console.log("Current games array:", this.games);
         const game = this.games.find( 
           (game) =>
-            game.player1.userId === userId || game.player2.userId === userId
+            game.player1.userId === userId || game.player2.userId === userId || game.player3 === userId
         );
 
         if (game) {
@@ -185,7 +218,7 @@ export class GameManager {
           );
           game.makeMove(
             game.player1.userId,
-            game.player2.userId,
+            game.player2.userId,  
             socket as unknown as WebSocket,
             message.payload
           );
