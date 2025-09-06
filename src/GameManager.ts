@@ -98,9 +98,12 @@ export class GameManager {
 
      for (const [userId, userSocket] of this.users.entries()) {
       if (userSocket === socket) {
-        playerIds.push(userId)
-        game.player3 = userId;
-      }}
+        console.log("passed this thingy over here userSocket === socket");
+        playerIds.push(userId);
+        game.player3 = socket;
+        console.log("game.player3.socket is userSocket is", userSocket === game.player3 )
+        game.player3.userId = userId;
+      }} 
 
     socket.send(
           JSON.stringify({
@@ -135,7 +138,7 @@ export class GameManager {
 
         if (this.pendingUser) {
 
-            const game = new Game(this.pendingUser, socket, null); 
+            const game = new Game(this.pendingUser, socket); 
           if (game) {  
             this.games.push(game);  
 
@@ -206,13 +209,26 @@ export class GameManager {
 
       } else if (message.type === MOVE) { 
         console.log("Current games array:", this.games);
-        const game = this.games.find( 
-          (game) =>
-            game.player1.userId === userId || game.player2.userId === userId || game.player3 === userId
-        );
+
+const game = this.games.find((game) => {
+  if (game.player3) {
+    console.log(game?.player3.userId);
+    return game.player1.userId === userId || 
+           game.player2.userId === userId || 
+           game.player3.userId === userId;
+  } else {
+    return game.player1.userId === userId || 
+           game.player2.userId === userId;
+  }
+});
+
+
+        console.log("hololo")
+        console.log(game?.player1.userId)
+        console.log(game?.player2.userId)
 
         if (game) {
-          console.log(
+          console.log( 
             "DEBUG: Payload received:",
             JSON.stringify(message.payload)
           );

@@ -13,7 +13,7 @@ export class Game {
   private startTime: Date;
   private moveCount = 0;
 
-  constructor(player1: any, player2: any, player3: any, gameId?: string) {
+  constructor(player1: any, player2: any, player3?: any, gameId?: string) {
     this.player1 = player1;
     this.player2 = player2;
     this.player3 = player3;
@@ -58,8 +58,15 @@ export class Game {
     move: {
       from: string;
       to: string;
-    }
+    },
+    player3Id?:any,
   ) { 
+
+        console.log(socket===this.player1);
+    console.log(socket===this.player2);
+    console.log(socket===this.player3); 
+
+    
     if (this.moveCount % 2 === 0 && socket !== this.player1 ) {
       if(socket === this.player3){
         console.log("proceed")
@@ -69,7 +76,7 @@ export class Game {
       return;
     }
 
-    }
+    } 
 
     if (this.moveCount % 2 === 1 && socket !== this.player2) {
       if(socket === this.player3){
@@ -118,7 +125,6 @@ export class Game {
 
     console.log("move succeeded");
 
-    if (this.moveCount % 2 == 0) {
       this.player2.send(
         JSON.stringify({
           type: MOVE,
@@ -128,10 +134,8 @@ export class Game {
           },
         })
       );
-    }
 
-    if (this.moveCount % 2 == 1) {
-      this.player1.send(
+            this.player1.send(
         JSON.stringify({
           type: MOVE,
           payload: {
@@ -140,7 +144,42 @@ export class Game {
           },
         })
       );
-    }
+      if(this.player3){
+            this.player3.send(
+        JSON.stringify({
+          type: MOVE,
+          payload: {
+            from: move.from,
+            to: move.to,
+          },
+        })
+      );
+      }
+
+
+    // if (this.moveCount % 2 == 0) {
+    //   this.player2.send(
+    //     JSON.stringify({
+    //       type: MOVE,
+    //       payload: {
+    //         from: move.from,
+    //         to: move.to,
+    //       },
+    //     })
+    //   );
+    // }
+
+    // if (this.moveCount % 2 == 1) {
+    //   this.player1.send(
+    //     JSON.stringify({
+    //       type: MOVE,
+    //       payload: {
+    //         from: move.from,
+    //         to: move.to,
+    //       },
+    //     })
+    //   );
+    // }
     console.log("before movecount increment");
     this.moveCount = this.moveCount + 1;
   }
