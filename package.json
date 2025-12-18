@@ -11,7 +11,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.13.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
@@ -19,9 +18,14 @@
     "@types/ws": "^8.5.14",
     "chess.js": "^1.0.0",
     "cors": "^2.8.5",
+    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
     "url": "^0.11.4",
     "uuid": "^11.1.0",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0"
   }
 }

@@ -15,7 +15,6 @@ router.post('/guest', async (req: Request, res: Response) => {
   const user = await db.users.create({
     data: {
       username: guestUUID,
-      // email: guestUUID + '@chess100x.com',
       name: bodyData.name || guestUUID
         },
   });   
